@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"hekv/redis"
 )
 
 func main() {
@@ -31,7 +31,9 @@ func main() {
 		defer value.Free()
 		fmt.Printf("%+v\n", value.Data())
 	*/
-	for i := 0; i < 101; i++ {
-		fmt.Printf("%02d\n", i)
-	}
+	//for i := 0; i < 101; i++ {
+	//	fmt.Printf("%02d\n", i)
+	//}
+	server := redis.CreateServer()
+	server.Run()
 }
