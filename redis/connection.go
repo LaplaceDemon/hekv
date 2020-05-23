@@ -32,14 +32,37 @@ func (c *connection) ReadLine() (string, error) {
 	return str, nil
 }
 
-func (c *connection) WriteAndFlush(v Values) error {
-	for _, val := range v.values {
-		valLen := len(val)
-		if _, err := c.writer.WriteString(fmt.Sprintf("$%d\r\n", valLen)); err != nil {
+func (c *connection) WriteAndFlush(rs Replys) error {
+	if len(rs) == 0 {
+		if _, err := c.writer.WriteString("$-1\r\n"); err != nil {
 			return err
 		}
-		if _, err := c.writer.WriteString(fmt.Sprintf("%s\r\n", val)); err != nil {
-			return err
+	} else {
+		for _, r := range rs {
+			switch r.(type) {
+			case BulkReply:
+				val := r.value()
+				valLen := len(val)
+				if _, err := c.writer.WriteString(fmt.Sprintf("$%d\r\n", valLen)); err != nil {
+					return err
+				}
+				if _, err := c.writer.WriteString(fmt.Sprintf("%s\r\n", val)); err != nil {
+					return err
+				}
+			case StatusReply:
+				val := r.value()
+				if _, err := c.writer.WriteString(fmt.Sprintf("+%s\r\n", val)); err != nil {
+					return err
+				}
+			case IntegerReply:
+				val := r.value()
+				if _, err := c.writer.WriteString(fmt.Sprintf(":%s\r\n", val)); err != nil {
+					return err
+				}
+			default:
+
+			}
+
 		}
 	}
 	return c.writer.Flush()

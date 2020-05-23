@@ -36,6 +36,16 @@ func (p *BadgerKV) Put(key []byte, value []byte) error {
 	return nil
 }
 
+func (p *BadgerKV) Del(key []byte) error {
+	txn := p.db.NewTransaction(true)
+	defer txn.Discard()
+	err := txn.Delete(key)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (p *BadgerKV) Close() error {
 	if p.db != nil {
 		if err := p.db.Close(); err != nil {

@@ -30,6 +30,10 @@ func (p *PebbleKV) Put(key []byte, value []byte) error {
 	return p.db.Set(key, value, p.wo)
 }
 
+func (p *PebbleKV) Del(key []byte) error {
+	return p.db.Delete(key, p.wo)
+}
+
 func (p *PebbleKV) Close() error {
 	if p.db != nil {
 		if err := p.db.Close(); err != nil {
