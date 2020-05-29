@@ -142,6 +142,21 @@ func (s *Server) handleCommand(conn *connection, command Command) error {
 		}
 		rs := Replys{IntegerReply{1}}
 		return conn.WriteAndFlush(rs)
+	} else if strings.EqualFold(cmd, "HSET") {
+		key := command.GetArg(1)
+		field := command.GetArg(2)
+		value := command.GetArg(2)
+
+		k := make([]byte, 0, len(key)+1+len(field))
+		k = append(k, key...)
+		k = append(k, byte(0))
+		k = append(k, field...)
+		err := s.kv.Put(k, []byte(value))
+		if err != nil {
+
+		}
+		rs := Replys{StatusReply{"OK"}}
+		return conn.WriteAndFlush(rs)
 	}
 
 	return errors.New("Unknow command")
