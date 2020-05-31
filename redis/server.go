@@ -3,17 +3,19 @@ package redis
 import (
 	"errors"
 	"fmt"
-	"hekv/kv"
 	"io/ioutil"
 	"net"
 	"os"
 	"strconv"
 	"strings"
+
+	"hekv/store"
 )
 
 type Server struct {
-	Config Config
-	kv     kv.KV
+	Config  Config
+	handler *Handler
+	KV      store.KV
 }
 
 func CreateServer() *Server {
@@ -23,7 +25,7 @@ func CreateServer() *Server {
 	if err != nil {
 		return nil
 	}
-	kv, err := kv.OpenPebbleKV(hekvTempPath)
+	kv, err := store.OpenPebbleKV(hekvTempPath)
 	if err != nil {
 		return nil
 	}
@@ -31,7 +33,8 @@ func CreateServer() *Server {
 		Config: Config{
 			Port: 6380,
 		},
-		kv: kv,
+		handler: NewHandler(),
+		KV:      kv,
 	}
 
 	return server
@@ -59,7 +62,7 @@ func (s *Server) Run() error {
 	}
 }
 
-func (s *Server) handleConn(conn *connection) error {
+func (s *Server) handleConn(conn *Connection) error {
 	for {
 		//conn.Read
 		argsCountStr, err := conn.ReadLine()
@@ -104,60 +107,13 @@ func (s *Server) handleConn(conn *connection) error {
 	return nil
 }
 
-func (s *Server) handleCommand(conn *connection, command Command) error {
-	cmd := command.GetArg(0)
-	if strings.EqualFold(cmd, "GET") {
-		arg := command.GetArg(1)
-		var value []byte
-		err := s.kv.Get([]byte(arg), func(val []byte) error {
-			value = val
-			return nil
-		})
+func (s *Server) handleCommand(conn *Connection, command Command) error {
+	arg0 := command.GetArg(0)
+	mapper := s.handler.Get(arg0)
 
-		if err != nil {
-		}
-
-		rs := Replys{}
-		if value != nil {
-			rs = append(rs, BulkReply{
-				val: string(value),
-			})
-		}
-
-		return conn.WriteAndFlush(rs)
-	} else if strings.EqualFold(cmd, "SET") {
-		key := command.GetArg(1)
-		val := command.GetArg(2)
-		err := s.kv.Put([]byte(key), []byte(val))
-		if err != nil {
-
-		}
-		rs := Replys{StatusReply{"OK"}}
-		return conn.WriteAndFlush(rs)
-	} else if strings.EqualFold(cmd, "DEL") {
-		key := command.GetArg(1)
-		err := s.kv.Del([]byte(key))
-		if err != nil {
-
-		}
-		rs := Replys{IntegerReply{1}}
-		return conn.WriteAndFlush(rs)
-	} else if strings.EqualFold(cmd, "HSET") {
-		key := command.GetArg(1)
-		field := command.GetArg(2)
-		value := command.GetArg(2)
-
-		k := make([]byte, 0, len(key)+1+len(field))
-		k = append(k, key...)
-		k = append(k, byte(0))
-		k = append(k, field...)
-		err := s.kv.Put(k, []byte(value))
-		if err != nil {
-
-		}
-		rs := Replys{StatusReply{"OK"}}
-		return conn.WriteAndFlush(rs)
+	if mapper == nil {
+		return errors.New("Unknow command")
 	}
 
-	return errors.New("Unknow command")
+	return mapper(s, conn, command)
 }

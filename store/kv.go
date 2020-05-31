@@ -1,4 +1,4 @@
-package kv
+package store
 
 type KV interface {
 	Get(key []byte, opValue func([]byte) error) error

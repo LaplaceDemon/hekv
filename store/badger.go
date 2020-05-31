@@ -1,4 +1,4 @@
-package kv
+package store
 
 import (
 	"github.com/dgraph-io/badger/v2"

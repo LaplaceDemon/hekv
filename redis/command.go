@@ -14,6 +14,10 @@ func (c *Command) GetArg(i int) string {
 	return c.cmds[i]
 }
 
+func (c *Command) Size() int {
+	return len(c.cmds)
+}
+
 type Replys []Reply
 
 type Reply interface {

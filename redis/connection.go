@@ -6,23 +6,23 @@ import (
 	"net"
 )
 
-type connection struct {
+type Connection struct {
 	c      net.Conn
 	reader *bufio.Reader
 	writer *bufio.Writer
 }
 
-func NewConnection(conn net.Conn) *connection {
+func NewConnection(conn net.Conn) *Connection {
 	reader := bufio.NewReader(conn)
 	writer := bufio.NewWriter(conn)
-	return &connection{
+	return &Connection{
 		c:      conn,
 		reader: reader,
 		writer: writer,
 	}
 }
 
-func (c *connection) ReadLine() (string, error) {
+func (c *Connection) ReadLine() (string, error) {
 	line, _, err := c.reader.ReadLine()
 	if err != nil {
 		return "", err
@@ -32,7 +32,7 @@ func (c *connection) ReadLine() (string, error) {
 	return str, nil
 }
 
-func (c *connection) WriteAndFlush(rs Replys) error {
+func (c *Connection) WriteAndFlush(rs Replys) error {
 	if len(rs) == 0 {
 		if _, err := c.writer.WriteString("$-1\r\n"); err != nil {
 			return err
