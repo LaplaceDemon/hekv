@@ -29,11 +29,14 @@ func CreateServer() *Server {
 	if err != nil {
 		return nil
 	}
+	handler := NewHandler()
+	handler.Init()
+
 	server := &Server{
 		Config: Config{
 			Port: 6380,
 		},
-		handler: NewHandler(),
+		handler: handler,
 		KV:      kv,
 	}
 
@@ -63,13 +66,14 @@ func (s *Server) Run() error {
 }
 
 func (s *Server) handleConn(conn *Connection) error {
+	fmt.Printf("Connection Start\n")
+	defer fmt.Printf("Connection Over\n")
 	for {
 		//conn.Read
 		argsCountStr, err := conn.ReadLine()
 		if err != nil {
 			return err
 		}
-
 		cmd := Command{}
 		if strings.HasPrefix(argsCountStr, "*") {
 			argsCount, err := strconv.Atoi(argsCountStr[1:])
@@ -100,20 +104,22 @@ func (s *Server) handleConn(conn *Connection) error {
 				}
 			}
 		}
-
-		s.handleCommand(conn, cmd)
+		fmt.Printf("%+v\n", cmd)
+		if err := s.handleCommand(conn, cmd); err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
 func (s *Server) handleCommand(conn *Connection, command Command) error {
-	arg0 := command.GetArg(0)
-	mapper := s.handler.Get(arg0)
+	cmd := command.GetArg(0)
+	handle := s.handler.Func(cmd)
 
-	if mapper == nil {
+	if handle == nil {
 		return errors.New("Unknow command")
 	}
 
-	return mapper(s, conn, command)
+	return handle(s, conn, command)
 }

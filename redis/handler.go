@@ -28,7 +28,7 @@ func (h *Handler) Init() {
 
 }
 
-func (h *Handler) Get(name string) func(s *Server, conn *Connection, command Command) error {
+func (h *Handler) Func(name string) func(s *Server, conn *Connection, command Command) error {
 	cmdName := strings.ToUpper(name)
 	return h.mapper[cmdName]
 }

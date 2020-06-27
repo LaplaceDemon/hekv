@@ -27,7 +27,6 @@ func (c *Connection) ReadLine() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	fmt.Printf("%s\n", string(line))
 	str := string(line)
 	return str, nil
 }
